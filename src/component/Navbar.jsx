@@ -6,8 +6,10 @@ import { useAuth } from '../context/AuthContext'
 
 const links = [
   { to: '/dashboard', label: 'Dashboard' },
-  { to: '/dashboard?tab=history', label: 'History' },
-  { to: '/dashboard?tab=profile', label: 'Profile' },
+  { to: '/assessment', label: 'Assessment' },
+  { to: '/recommendations', label: 'Recommendations' },
+  { to: '/history', label: 'History' },
+  { to: '/profile', label: 'Profile' },
 ]
 
 export default function Navbar() {
@@ -22,24 +24,32 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-ink-soft/10 bg-cream/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 sm:px-8">
         <NavLink to="/dashboard">
           <Brandmark size="sm" />
         </NavLink>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="hidden items-center gap-7 md:flex">
           {links.map((l) => (
             <NavLink
               key={l.label}
               to={l.to}
-              className="text-sm font-medium text-ink-soft transition-colors hover:text-navy"
+             className={({ isActive }) =>
+             `relative text-sm font-medium transition-colors ${
+             isActive
+             ? 'text-navy after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-full after:bg-gold'
+             : 'text-ink-soft hover:text-navy'
+            }`
+            }
             >
               {l.label}
             </NavLink>
           ))}
         </nav>
 
-        <div className="hidden items-center gap-4 md:flex">
+        
+
+        <div className="hidden items-center gap-3 md:flex">
           <div className="flex items-center gap-2.5 rounded-full bg-paper py-1 pl-1 pr-3.5">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-navy text-xs font-semibold text-cream">
               {user?.name?.[0] ?? 'S'}
@@ -86,6 +96,7 @@ export default function Navbar() {
                 {l.label}
               </NavLink>
             ))}
+
             <button
               onClick={handleLogout}
               className="focus-ring mt-1 flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-coral hover:bg-coral-light"

@@ -4,8 +4,12 @@ import ProtectedRoute from "./component/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from './pages/ForgotPassword'
-import Dashboard from './pages/Dashboard'
 import CertDetail from './pages/CertDetails'
+import Dashboard from './pages/Dashboard'
+import Assessment from './pages/Assessment'
+import History from './pages/History'
+import Profile from './pages/Profile'
+import Recommendation from './pages/Recommendation'
 
 export default function App() {
   return (
@@ -14,13 +18,45 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} /> 
+          <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assessment"
+            element={
+              <ProtectedRoute>
+                <Assessment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <History />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/recommendations"
+            element={
+              <ProtectedRoute>
+                <Recommendation />
               </ProtectedRoute>
             }
           />

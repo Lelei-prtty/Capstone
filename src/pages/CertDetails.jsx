@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../component/Navbar.jsx'
+import { certifications } from '../Data/Dummycertification.js'
 import {
   ArrowLeft, MapPin, Building2, Wallet, FileText, ListChecks,
   Clock, Repeat, Target, Bookmark, CheckCircle2,

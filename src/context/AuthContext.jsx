@@ -3,13 +3,13 @@ import { createContext, useContext, useState } from 'react'
 const AuthContext = createContext(null)
 
 const DEMO_USER = {
-  name: ' ',
-  email: ' ',
-  school: ' ',
-  course: ' ',
-  yearLevel: ' ',
-  bio: ' ',
-  interests: ['  ', '  ', '  '],
+  name: ' UserName',
+  email: ' Email@sample.com ',
+  school: ' Adamson University ',
+  course: ' Computer Science ',
+  yearLevel: ' 3rd Year ',
+  bio: ' Aspiring data analyst exploring free and low-cost certifications to build a competitive portfolio. ',
+  interests: [' Computer Science ', ' Data Science ', ' Web Development '],
   progress: {
     completed: 2,
     inProgress: 1,
