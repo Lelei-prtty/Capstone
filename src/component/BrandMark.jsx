@@ -1,6 +1,6 @@
 import { Award } from 'lucide-react'
 
-export default function Brandmark({ size = 'md', light = false }) {
+export default function BrandMark({ size = 'md', light = false }) {
   const sizes = {
     sm: 'h-8 w-8 text-base',
     md: 'h-11 w-11 text-lg',
@@ -20,7 +20,7 @@ export default function Brandmark({ size = 'md', light = false }) {
           size === 'lg' ? 'text-2xl' : 'text-lg'
         } ${light ? 'text-cream' : 'text-navy'}`}
       >
-        Sertipika
+        Certifield
       </span>
     </div>
   )
