@@ -6,10 +6,10 @@ import Register from "./pages/Register";
 import ForgotPassword from './pages/ForgotPassword'
 import CertDetail from './pages/CertDetails'
 import Dashboard from './pages/Dashboard'
-import Assessment from './pages/Assessment'
 import History from './pages/History'
 import Profile from './pages/Profile'
 import Recommendation from './pages/Recommendation'
+import Assessment from './pages/Assessment'
 
 export default function App() {
   return (
