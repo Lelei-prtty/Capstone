@@ -141,7 +141,7 @@ export default function Assessment() {
   }
 
   function handleSubmit() {
-    navigate('/dashboard?tab=recommendations')
+    navigate('/recommendations')
   }
 
   const isNoneYet = form.internshipRole === 'None yet'
@@ -441,7 +441,7 @@ function SkillSelector({ skills, selected, onToggle, onLevel }) {
   )
 }
 
-// Multi-select dropdown (unchanged logic)
+// Multi-select dropdown
 function MultiSelect({ options, selected, onChange, placeholder }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
