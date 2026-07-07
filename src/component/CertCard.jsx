@@ -5,22 +5,14 @@ export default function CertCard({ cert }) {
   const isFree = cert.cost === 'Free'
   return (
     <Link
-      to={`/certifications/${cert.id}`}
+      to={'/certifications/' + cert.id}
       className="focus-ring group flex flex-col rounded-2xl border border-ink-soft/10 bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-[0_8px_24px_-12px_rgba(27,42,74,0.25)]"
     >
       <div className="flex items-start justify-between gap-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-paper text-xs font-mono font-semibold text-navy">
-          {cert.field
-            .split(' ')
-            .map((w) => w[0])
-            .slice(0, 2)
-            .join('')}
+          {cert.field.split(' ').map((w) => w[0]).slice(0, 2).join('')}
         </span>
-        <span
-          className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-            isFree ? 'bg-sage-light text-sage' : 'bg-coral-light text-coral'
-          }`}
-        >
+        <span className={'rounded-full px-2.5 py-1 text-xs font-medium ' + (isFree ? 'bg-sage-light text-sage' : 'bg-coral-light text-coral')}>
           {isFree ? 'Free' : cert.price}
         </span>
       </div>

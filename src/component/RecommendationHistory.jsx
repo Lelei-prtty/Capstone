@@ -1,47 +1,109 @@
-import { Link } from 'react-router-dom'
-import { certifications } from '../Data/Dummycertification.js'
-import { CheckCircle2, Clock4, Bookmark, ArrowRight } from 'lucide-react'
+import { Clock, Award, ChevronRight, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 
-const statusStyles = {
-  Completed: { icon: CheckCircle2, className: 'text-sage bg-sage-light' },
-  'In Progress': { icon: Clock4, className: 'text-gold bg-gold/10' },
-  Saved: { icon: Bookmark, className: 'text-navy bg-paper' },
-}
+export default function RecommendationHistory() {
+  const navigate = useNavigate()
 
-export default function RecommendationHistory({ history }) {
+  // Read history from localStorage
+  const [history, setHistory] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('assessmentHistory') || '[]')
+    } catch {
+      return []
+    }
+  })
+
+  function clearHistory() {
+    localStorage.removeItem('assessmentHistory')
+    setHistory([])
+  }
+
+  if (!history || history.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-ink-soft/20 py-16 text-center">
+        <Award className="mx-auto h-8 w-8 text-ink-soft/40" strokeWidth={1.5} />
+        <p className="mt-3 font-display text-base font-semibold text-navy">No history yet</p>
+        <p className="mt-1 text-sm text-ink-soft">
+          Complete an assessment to get your first recommendation.
+        </p>
+        <button
+          onClick={() => navigate('/assessment')}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-navy px-4 py-2 text-xs font-medium text-cream hover:bg-navy/90"
+        >
+          Take the assessment
+          <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+      </div>
+    )
+  }
+
   return (
-    <div className="rounded-2xl border border-ink-soft/10 bg-white p-5">
-      <h2 className="font-display text-lg font-semibold text-navy">Recommendation history</h2>
-      <p className="mt-1 text-sm text-ink-soft">Certifications you've viewed, saved, or completed.</p>
+    <div className="space-y-4">
+      {/* Clear history button */}
+      <div className="flex justify-end">
+        <button
+          onClick={clearHistory}
+          className="flex items-center gap-1.5 text-xs font-medium text-ink-soft hover:text-coral transition-colors"
+        >
+          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+          Clear history
+        </button>
+      </div>
 
-      <ul className="mt-4 divide-y divide-ink-soft/10">
-        {history.map((item) => {
-          const cert = certifications.find((c) => c.id === item.id)
-          if (!cert) return null
-          const { icon: Icon, className } = statusStyles[item.status]
-          return (
-            <li key={item.id}>
-              <Link
-                to={`/certifications/${cert.id}`}
-                className="focus-ring group flex items-center gap-3.5 py-3.5"
-              >
-                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${className}`}>
-                  <Icon className="h-4 w-4" strokeWidth={1.75} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-navy group-hover:underline decoration-gold/60 underline-offset-4">
-                    {cert.title}
-                  </p>
-                  <p className="text-xs text-ink-soft">
-                    {item.status} · Viewed {item.viewedOn}
-                  </p>
+      {history.map((item, idx) => (
+        <div key={idx} className="rounded-2xl border border-ink-soft/10 bg-white p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="h-3.5 w-3.5 text-ink-soft" strokeWidth={1.75} />
+                <span className="text-xs text-ink-soft">{item.date ?? 'Recently'}</span>
+              </div>
+              <p className="font-display text-lg font-semibold text-navy">
+                {item.recommendedRole ?? '—'}
+              </p>
+
+              {/* Top 3 roles */}
+              {item.top3?.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  {item.top3.map((r, i) => (
+                    <div key={r.role} className="flex items-center gap-2">
+                      <span className={'flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ' + (i === 0 ? 'bg-gold text-navy' : 'bg-paper text-ink-soft')}>
+                        {i + 1}
+                      </span>
+                      <span className="text-xs text-ink">{r.role}</span>
+                      <span className="text-xs font-medium text-gold ml-auto">
+                        {Math.round(r.confidence * 100)}%
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-ink-soft/40 transition-colors group-hover:text-gold" />
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
+              )}
+
+              {/* Skills */}
+              {item.skills?.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {item.skills.map((s) => (
+                    <span key={s} className="rounded-full bg-paper px-2.5 py-0.5 text-xs font-medium text-navy">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Confidence badge */}
+            {item.confidence !== undefined && (
+              <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-full bg-navy">
+                <span className="font-display text-sm font-semibold text-gold">
+                  {Math.round(item.confidence * 100)}%
+                </span>
+                <span className="text-[9px] text-cream/50">match</span>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

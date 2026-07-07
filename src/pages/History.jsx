@@ -10,18 +10,18 @@ export default function History() {
   return (
     <div className="min-h-screen bg-cream">
       <Navbar />
-
       <main className="mx-auto max-w-2xl px-5 py-8 sm:px-8">
         <div className="flex flex-col gap-1">
           <p className="font-mono text-xs uppercase tracking-wider text-gold">Past activity</p>
           <h1 className="font-display text-3xl font-semibold text-navy sm:text-4xl">
             Recommendation history
           </h1>
-          <p className="text-sm text-ink-soft">A log of the certifications you've been matched with over time.</p>
+          <p className="text-sm text-ink-soft">
+            A log of your past assessments and recommended roles.
+          </p>
         </div>
-
         <div className="mt-7">
-          <RecommendationHistory history={user.history} />
+          <RecommendationHistory />
         </div>
       </main>
     </div>
