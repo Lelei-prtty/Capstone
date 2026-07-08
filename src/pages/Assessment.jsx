@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDown, Check, Loader2 } from 'lucide-react'
 import Navbar from '../component/Navbar.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -144,6 +145,7 @@ function buildApiPayload(form, personalityAnswers) {
 
 export default function Assessment() {
   const navigate = useNavigate()
+  const { updateProfile } = useAuth()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({
     technicalSkills: [],
@@ -215,6 +217,24 @@ export default function Assessment() {
         top3: result.top_3,
       }
       localStorage.setItem('assessmentHistory', JSON.stringify([historyEntry, ...existing].slice(0, 20)))
+
+      // Persist the latest assessment intake onto the user's profile, so
+      // Profile/Dashboard reflect the skills/interests just submitted instead
+      // of only ever showing what was there at registration time.
+      const priorCerts = form.certificatesObtained
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean)
+
+      const profileUpdates = {
+        technicalSkills: form.technicalSkills,
+        languages: form.languages,
+        certificationsObtained: priorCerts,
+      }
+      if (form.specialization) profileUpdates.specialization = form.specialization
+      if (formSummary.careerInterests.length) profileUpdates.careerGoal = formSummary.careerInterests.join(', ')
+
+      updateProfile(profileUpdates)
 
       navigate('/recommendations', { state: { result, formSummary } })
     } catch (err) {

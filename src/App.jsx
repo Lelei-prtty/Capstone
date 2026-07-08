@@ -9,6 +9,7 @@ import History from './pages/History'
 import Profile from './pages/Profile'
 import Recommendation from './pages/Recommendation'
 import Assessment from './pages/Assessment'
+import CertDetail from './pages/CertDetails'
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/recommendations" element={<ProtectedRoute><Recommendation /></ProtectedRoute>} />
+          <Route path="/certifications/:id" element={<ProtectedRoute><CertDetail /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>

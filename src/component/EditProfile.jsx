@@ -1,16 +1,30 @@
-import { useState } from 'react'
-import { X } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { X, Camera } from 'lucide-react'
 import FormField from './FormField'
 import { useAuth } from '../context/AuthContext'
 
 export default function EditProfile({ open, onClose }) {
   const { user, updateProfile } = useAuth()
   const [form, setForm] = useState(user)
+  const fileInputRef = useRef(null)
 
   if (!open) return null
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  function handlePhotoChange(e) {
+    const file = e.target.files?.[0]
+    if (!file || !file.type.startsWith('image/')) return
+    const reader = new FileReader()
+    reader.onload = () => setForm((f) => ({ ...f, avatar: reader.result }))
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  function handleRemovePhoto() {
+    setForm((f) => ({ ...f, avatar: null }))
   }
 
   function handleSubmit(e) {
@@ -31,12 +45,39 @@ export default function EditProfile({ open, onClose }) {
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div className="flex items-center gap-4">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-navy font-display text-2xl font-semibold text-cream">
-              {form.name?.[0] ?? 'S'}
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-navy font-display text-2xl font-semibold text-cream">
+              {form.avatar ? (
+                <img src={form.avatar} alt="Profile photo" className="h-full w-full object-cover" />
+              ) : (
+                form.name?.[0] ?? 'S'
+              )}
             </span>
-            <button type="button" className="focus-ring rounded-lg border border-ink-soft/20 px-3 py-1.5 text-xs font-medium text-navy hover:bg-paper">
-              Change photo
-            </button>
+            <div className="flex flex-col items-start gap-1.5">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="focus-ring flex items-center gap-1.5 rounded-lg border border-ink-soft/20 px-3 py-1.5 text-xs font-medium text-navy hover:bg-paper"
+              >
+                <Camera className="h-3.5 w-3.5" strokeWidth={1.75} />
+                Change photo
+              </button>
+              {form.avatar && (
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  className="focus-ring text-xs font-medium text-coral hover:underline"
+                >
+                  Remove photo
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+            </div>
           </div>
 
           <FormField id="name" label="Full name" value={form.name} onChange={handleChange} />

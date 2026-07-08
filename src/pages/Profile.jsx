@@ -47,8 +47,12 @@ function ProfileSummaryCard({ user, onEdit, expanded = false }) {
     <div className="rounded-2xl border border-ink-soft/10 bg-white p-5">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3.5">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-navy font-display text-xl font-semibold text-cream">
-            {user.name[0]}
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-navy font-display text-xl font-semibold text-cream">
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+            ) : (
+              user.name[0]
+            )}
           </span>
           <div>
             <p className="font-display text-base font-semibold text-navy">{user.name}</p>

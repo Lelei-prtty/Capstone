@@ -23,11 +23,10 @@ export default function Login() {
     }
     setError('')
     setLoading(true)
-    setTimeout(() => {
-      login()
-      setLoading(false)
-      navigate('/dashboard')
-    }, 600)
+    login(email, password)
+      .then(() => navigate('/dashboard'))
+      .catch((err) => setError(err.message || 'Could not log in. Check your email and password.'))
+      .finally(() => setLoading(false))
   }
 
   return (

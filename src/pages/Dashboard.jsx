@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Navbar from '../component/Navbar.jsx'
 import CertCard from '../component/CertCard.jsx'
 import SearchFilter from '../component/SearchFilter.jsx'
@@ -18,6 +19,7 @@ import {
   CheckCircle2,
   Circle,
   Award,
+  Trophy,
 } from 'lucide-react'
 
 export default function Dashboard() {
@@ -39,10 +41,27 @@ export default function Dashboard() {
     })
   }, [query, field, level, cost])
 
-  const topRecommendations = useMemo(
-    () => [...certifications].sort((a, b) => b.matchScore - a.matchScore).slice(0, 3),
-    []
-  )
+  // Pull the most recent assessment result (same key Assessment.jsx saves to),
+  // so the dashboard reflects whatever role you were last recommended instead
+  // of always showing the same static global top 3.
+  const lastAssessment = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('lastAssessment'))
+    } catch {
+      return null
+    }
+  }, [])
+  const recommendedRole = lastAssessment?.result?.recommended_role ?? null
+
+  const topRecommendations = useMemo(() => {
+    if (recommendedRole) {
+      const roleMatches = certifications
+        .filter((c) => c.roles.includes(recommendedRole))
+        .sort((a, b) => b.matchScore - a.matchScore)
+      if (roleMatches.length > 0) return roleMatches.slice(0, 3)
+    }
+    return [...certifications].sort((a, b) => b.matchScore - a.matchScore).slice(0, 3)
+  }, [recommendedRole])
 
   if (!user) return null
 
@@ -66,6 +85,17 @@ export default function Dashboard() {
                 <Sparkles className="h-4 w-4 text-gold" strokeWidth={1.75} />
                 <h2 className="font-display text-xl font-semibold text-navy">Top recommendations for you</h2>
               </div>
+              {recommendedRole && (
+                <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-gold/20 bg-gold/5 px-4 py-3">
+                  <div className="flex items-center gap-2 text-sm text-navy">
+                    <Trophy className="h-4 w-4 text-gold" strokeWidth={1.75} />
+                    Based on your last assessment: <span className="font-semibold">{recommendedRole}</span>
+                  </div>
+                  <Link to="/recommendations" className="text-xs font-medium text-navy underline underline-offset-2 hover:text-gold">
+                    View full results
+                  </Link>
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {topRecommendations.map((cert) => (
                   <CertCard key={cert.id} cert={cert} />
@@ -201,8 +231,12 @@ function ProfileSummaryCard({ user, onEdit, expanded = false }) {
     <div className="rounded-2xl border border-ink-soft/10 bg-white p-5">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3.5">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-navy font-display text-xl font-semibold text-cream">
-            {user.name[0]}
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-navy font-display text-xl font-semibold text-cream">
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+            ) : (
+              user.name[0]
+            )}
           </span>
           <div>
             <p className="font-display text-base font-semibold text-navy">{user.name}</p>

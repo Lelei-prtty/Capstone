@@ -29,11 +29,19 @@ export default function Register() {
     }
     setErrors({})
     setLoading(true)
-    setTimeout(() => {
-      register(data)
-      setLoading(false)
-      navigate('/dashboard')
-    }, 600)
+    register(data)
+      .then((result) => {
+        if (result?.needsEmailConfirmation) {
+          setErrors({ form: 'Account created! Check your email to confirm before logging in.' })
+          setLoading(false)
+          return
+        }
+        navigate('/dashboard')
+      })
+      .catch((err) => {
+        setErrors({ form: err.message || 'Could not create your account. Please try again.' })
+        setLoading(false)
+      })
   }
 
   return (
@@ -50,6 +58,11 @@ export default function Register() {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        {errors.form && (
+          <p className="rounded-lg bg-coral-light px-3.5 py-2.5 text-sm text-coral" role="alert">
+            {errors.form}
+          </p>
+        )}
         <FormField id="name" label="Full name" placeholder="Juan Dela Cruz" error={errors.name} autoComplete="name" />
         <FormField id="email" label="School or personal email" type="email" placeholder="juan.delacruz@email.com" error={errors.email} autoComplete="email" />
         <FormField id="school" label="School / University" placeholder="University of the Philippines" error={errors.school} />
