@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Menu, X, LogOut, Sun, Moon } from 'lucide-react'
-import Brandmark from './Brandmark.jsx'
-import { useAuth } from '../context/AuthContext'
+import Brandmark from './BrandMark.jsx'
+import { useAuth } from '../context/AuthContext'  
 
 const links = [
   { to: '/dashboard',       label: 'Dashboard' },
