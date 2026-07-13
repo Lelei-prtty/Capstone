@@ -58,6 +58,45 @@ async function loadFullProfile(userId) {
   }
 }
 
+// Pulls every saved assessment for this user from Supabase and repopulates
+// the same localStorage keys Assessment/Recommendation/History already read
+// from, so those pages keep working unchanged after a fresh login — instead
+// of only ever having data right after you submit the assessment in the
+// same browser session.
+async function hydrateAssessmentCache(userId) {
+  const { data: rows, error } = await supabase
+    .from('assessments')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error || !rows || !rows.length) return
+
+  const toSkillNames = (technicalSkills) =>
+    (technicalSkills ?? []).map((s) => (typeof s === 'string' ? s : s.skill)).filter(Boolean)
+
+  const latest = rows[0]
+  const lastAssessment = {
+    result: { recommended_role: latest.recommended_role, top_3: latest.top_3 },
+    formSummary: {
+      skills: toSkillNames(latest.technical_skills),
+      careerInterests: latest.career_interests ?? [],
+      specialization: latest.specialization ?? '',
+    },
+  }
+  localStorage.setItem('lastAssessment', JSON.stringify(lastAssessment))
+
+  const history = rows.slice(0, 20).map((row) => ({
+    date: new Date(row.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }),
+    recommendedRole: row.recommended_role,
+    confidence: row.top_3?.[0]?.confidence ?? 0,
+    skills: toSkillNames(row.technical_skills),
+    careerInterests: row.career_interests ?? [],
+    top3: row.top_3,
+  }))
+  localStorage.setItem('assessmentHistory', JSON.stringify(history))
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   // Starts true so ProtectedRoute doesn't redirect to /login before we've
@@ -71,6 +110,7 @@ export function AuthProvider({ children }) {
       if (session?.user) {
         const profile = await loadFullProfile(session.user.id).catch(() => null)
         if (active) setUser(profile)
+        await hydrateAssessmentCache(session.user.id).catch(() => {})
       }
       if (active) setLoading(false)
     })
@@ -79,6 +119,7 @@ export function AuthProvider({ children }) {
       if (session?.user) {
         const profile = await loadFullProfile(session.user.id).catch(() => null)
         if (active) setUser(profile)
+        await hydrateAssessmentCache(session.user.id).catch(() => {})
       } else if (active) {
         setUser(null)
       }
@@ -95,6 +136,7 @@ export function AuthProvider({ children }) {
     if (error) throw error
     const profile = await loadFullProfile(data.user.id)
     setUser(profile)
+    await hydrateAssessmentCache(data.user.id).catch(() => {})
     return profile
   }
 
@@ -189,8 +231,30 @@ export function AuthProvider({ children }) {
     setUser(refreshed)
   }
 
+  // Writes one finished assessment to Supabase (table: assessments) so it
+  // survives logout/login instead of only living in localStorage. Call this
+  // right after the model returns a result.
+  async function saveAssessment({ form, personalityAnswers, result }) {
+    if (!user) return
+    const { error } = await supabase.from('assessments').insert({
+      user_id: user.id,
+      technical_skills: form.technicalSkills,
+      languages: form.languages,
+      specialization: form.specialization,
+      completed_projects: form.completedProjects,
+      internship_role: form.internshipRole,
+      internship_duration: form.internshipDuration,
+      certificates_obtained_note: form.certificatesObtained,
+      career_interests: form.careerInterests,
+      personality_answers: personalityAnswers,
+      recommended_role: result.recommended_role,
+      top_3: result.top_3,
+    })
+    if (error) throw error
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, saveAssessment }}>
       {children}
     </AuthContext.Provider>
   )

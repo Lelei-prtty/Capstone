@@ -145,7 +145,7 @@ function buildApiPayload(form, personalityAnswers) {
 
 export default function Assessment() {
   const navigate = useNavigate()
-  const { updateProfile } = useAuth()
+  const { updateProfile, saveAssessment } = useAuth()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({
     technicalSkills: [],
@@ -235,6 +235,10 @@ export default function Assessment() {
       if (formSummary.careerInterests.length) profileUpdates.careerGoal = formSummary.careerInterests.join(', ')
 
       updateProfile(profileUpdates)
+
+      // The actual fix: write this assessment to Supabase (table: assessments)
+      // so it's still there after logout/login, not just in localStorage.
+      await saveAssessment({ form, personalityAnswers, result })
 
       navigate('/recommendations', { state: { result, formSummary } })
     } catch (err) {
