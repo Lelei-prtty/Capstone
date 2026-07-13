@@ -253,8 +253,18 @@ export function AuthProvider({ children }) {
     if (error) throw error
   }
 
+  // Re-fetches profile + progress/saved counts for the current user without
+  // requiring a logout/login. Call this after any write that should be
+  // reflected live elsewhere (e.g. Dashboard's ProgressChecker) — such as
+  // marking a certification in progress or saving one for later.
+  async function refreshProfile() {
+    if (!user) return
+    const refreshed = await loadFullProfile(user.id).catch(() => null)
+    if (refreshed) setUser(refreshed)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, saveAssessment }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, saveAssessment, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   )
