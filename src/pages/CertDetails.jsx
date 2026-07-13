@@ -1,14 +1,102 @@
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../component/Navbar.jsx'
 import { certifications } from '../Data/Dummycertification.js'
+import { useAuth } from '../context/AuthContext.jsx'
+import { supabase } from '../lib/Supabaseclient'
 import {
   ArrowLeft, MapPin, Building2, Wallet, FileText, ListChecks,
-  Clock, Repeat, Target, Bookmark, CheckCircle2,
+  Clock, Repeat, Target, Bookmark, CheckCircle2, Loader2,
 } from 'lucide-react'
 
 export default function CertDetail() {
   const { id } = useParams()
+  const { user, refreshProfile } = useAuth()
   const cert = certifications.find((c) => c.id === id)
+
+  const [progressStatus, setProgressStatus] = useState(null) // null | 'in_progress' | 'completed'
+  const [isSaved, setIsSaved] = useState(false)
+  const [markingProgress, setMarkingProgress] = useState(false)
+  const [togglingSave, setTogglingSave] = useState(false)
+
+  // Load whatever's already in Supabase for this user + this certification,
+  // so the buttons reflect real state instead of always looking unclicked.
+  useEffect(() => {
+    if (!user || !cert) return
+    let active = true
+
+    async function loadState() {
+      const [{ data: progressRow }, { data: savedRow }] = await Promise.all([
+        supabase
+          .from('certification_progress')
+          .select('status')
+          .eq('user_id', user.id)
+          .eq('certification_id', cert.id)
+          .maybeSingle(),
+        supabase
+          .from('saved_certifications')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('certification_id', cert.id)
+          .maybeSingle(),
+      ])
+      if (!active) return
+      setProgressStatus(progressRow?.status ?? null)
+      setIsSaved(!!savedRow)
+    }
+
+    loadState()
+    return () => { active = false }
+  }, [user, cert])
+
+  async function handleMarkInProgress() {
+    if (!user || !cert || markingProgress || progressStatus) return
+    setMarkingProgress(true)
+    try {
+      const { error } = await supabase.from('certification_progress').insert({
+        user_id: user.id,
+        certification_id: cert.id,
+        status: 'in_progress',
+        started_at: new Date().toISOString(),
+      })
+      if (error) throw error
+      setProgressStatus('in_progress')
+      await refreshProfile().catch(() => {})
+    } catch (err) {
+      console.error('Failed to mark certification as in progress:', err)
+    } finally {
+      setMarkingProgress(false)
+    }
+  }
+
+  async function handleToggleSave() {
+    if (!user || !cert || togglingSave) return
+    setTogglingSave(true)
+    try {
+      if (isSaved) {
+        const { error } = await supabase
+          .from('saved_certifications')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('certification_id', cert.id)
+        if (error) throw error
+        setIsSaved(false)
+      } else {
+        const { error } = await supabase.from('saved_certifications').insert({
+          user_id: user.id,
+          certification_id: cert.id,
+          saved_at: new Date().toISOString(),
+        })
+        if (error) throw error
+        setIsSaved(true)
+      }
+      await refreshProfile().catch(() => {})
+    } catch (err) {
+      console.error('Failed to toggle saved certification:', err)
+    } finally {
+      setTogglingSave(false)
+    }
+  }
 
   if (!cert) {
     return (
@@ -53,13 +141,32 @@ export default function CertDetail() {
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <button className="focus-ring flex items-center gap-2 rounded-lg bg-gold px-4 py-2.5 text-sm font-medium text-navy hover:bg-gold-light">
-              <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} />
-              Mark as in progress
+            <button
+              onClick={handleMarkInProgress}
+              disabled={markingProgress || !!progressStatus}
+              className="focus-ring flex items-center gap-2 rounded-lg bg-gold px-4 py-2.5 text-sm font-medium text-navy hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {markingProgress ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} />
+              )}
+              {progressStatus === 'completed' ? 'Completed' : progressStatus === 'in_progress' ? 'In progress' : 'Mark as in progress'}
             </button>
-            <button className="focus-ring flex items-center gap-2 rounded-lg border border-cream/30 px-4 py-2.5 text-sm font-medium text-cream hover:bg-cream/10">
-              <Bookmark className="h-4 w-4" strokeWidth={1.75} />
-              Save for later
+            <button
+              onClick={handleToggleSave}
+              disabled={togglingSave}
+              className={
+                'focus-ring flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-70 ' +
+                (isSaved ? 'border-gold bg-gold/15 text-gold-light' : 'border-cream/30 text-cream hover:bg-cream/10')
+              }
+            >
+              {togglingSave ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Bookmark className="h-4 w-4" strokeWidth={1.75} fill={isSaved ? 'currentColor' : 'none'} />
+              )}
+              {isSaved ? 'Saved' : 'Save for later'}
             </button>
           </div>
         </div>
