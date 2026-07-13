@@ -44,13 +44,17 @@ export default function Dashboard() {
   // Pull the most recent assessment result (same key Assessment.jsx saves to),
   // so the dashboard reflects whatever role you were last recommended instead
   // of always showing the same static global top 3.
+  // IMPORTANT: localStorage is shared by the whole browser, not scoped per
+  // Supabase account — so we only trust it if it was saved by *this* user.
   const lastAssessment = useMemo(() => {
     try {
-      return JSON.parse(localStorage.getItem('lastAssessment'))
+      const parsed = JSON.parse(localStorage.getItem('lastAssessment'))
+      if (parsed?.userId && parsed.userId !== user?.id) return null
+      return parsed
     } catch {
       return null
     }
-  }, [])
+  }, [user?.id])
   const recommendedRole = lastAssessment?.result?.recommended_role ?? null
 
   const topRecommendations = useMemo(() => {

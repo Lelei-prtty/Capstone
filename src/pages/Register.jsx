@@ -6,10 +6,11 @@ import AuthLayout from '../layout/AuthLayout.jsx'
 import { Loader2 } from 'lucide-react'
 
 export default function Register() {
-  const { register } = useAuth()
+  const { register, logout } = useAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
+  const [agreed, setAgreed] = useState(false)
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -22,6 +23,7 @@ export default function Register() {
     if (!data.school) nextErrors.school = "Your school's name helps tailor results."
     if (!data.password || data.password.length < 8) nextErrors.password = 'Use at least 8 characters.'
     if (data.confirmPassword !== data.password) nextErrors.confirmPassword = 'Passwords do not match.'
+    if (!agreed) nextErrors.terms = 'You must agree to the Terms of Use and Privacy Policy.'
 
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors)
@@ -30,18 +32,22 @@ export default function Register() {
     setErrors({})
     setLoading(true)
     register(data)
-      .then((result) => {
+      .then(async (result) => {
         if (result?.needsEmailConfirmation) {
-          setErrors({ form: 'Account created! Check your email to confirm before logging in.' })
-          setLoading(false)
+          navigate('/login', {
+            state: { message: 'Account created! Check your email to confirm before logging in.' },
+          })
           return
         }
-        navigate('/dashboard')
+        // signUp may auto-create a session if email confirmation is off.
+        // Sign back out so the user actually has to log in from here.
+        await logout()
+        navigate('/login', { state: { message: 'Account created! Please log in to continue.' } })
       })
       .catch((err) => {
         setErrors({ form: err.message || 'Could not create your account. Please try again.' })
-        setLoading(false)
       })
+      .finally(() => setLoading(false))
   }
 
   return (
@@ -71,10 +77,18 @@ export default function Register() {
           <FormField id="confirmPassword" label="Confirm password" type="password" placeholder="••••••••" error={errors.confirmPassword} autoComplete="new-password" />
         </div>
 
-        <label className="flex items-start gap-2.5 text-xs text-ink-soft">
-          <input required type="checkbox" className="focus-ring mt-0.5 h-4 w-4 rounded border-ink-soft/30 text-navy" />
-          I agree to the Terms of Use and Privacy Policy.
-        </label>
+        <div>
+          <label className="flex items-start gap-2.5 text-xs text-ink-soft">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="focus-ring mt-0.5 h-4 w-4 rounded border-ink-soft/30 text-navy"
+            />
+            I agree to the Terms of Use and Privacy Policy.
+          </label>
+          {errors.terms && <p className="mt-1.5 text-xs text-coral">{errors.terms}</p>}
+        </div>
 
         <button
           type="submit"

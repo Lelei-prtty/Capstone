@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '../lib/Supabaseclient'
+import { supabase } from '../lib/supabaseClient'
 
 const AuthContext = createContext(null)
 
@@ -125,6 +125,8 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     await supabase.auth.signOut()
+    localStorage.removeItem('lastAssessment')
+    localStorage.removeItem('assessmentHistory')
     setUser(null)
   }
 
