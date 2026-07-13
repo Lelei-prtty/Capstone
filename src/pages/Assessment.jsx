@@ -160,6 +160,7 @@ export default function Assessment() {
   const [personalityAnswers, setPersonalityAnswers] = useState({})
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState('')
+  const [attemptedContinue, setAttemptedContinue] = useState(false)
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
@@ -178,6 +179,46 @@ export default function Assessment() {
       ...f,
       technicalSkills: f.technicalSkills.map((s) => s.skill === skill ? { ...s, level } : s),
     }))
+  }
+
+  function joinList(items) {
+    if (items.length === 1) return items[0]
+    return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1]
+  }
+
+  function getMissingFieldsStep1() {
+    const missing = []
+    if (form.technicalSkills.length === 0) missing.push('at least one technical skill')
+    if (form.languages.length === 0) missing.push('at least one programming language')
+    if (!form.specialization) missing.push('your academic specialization')
+    if (form.completedProjects.length === 0) missing.push('at least one completed project')
+    if (!form.internshipRole) missing.push('your internship experience')
+    if (form.internshipRole && form.internshipRole !== 'None yet' && !form.internshipDuration) {
+      missing.push('your internship duration')
+    }
+    return missing
+  }
+
+  function getMissingFieldsStep2() {
+    const missing = []
+    if (form.careerInterests.length === 0) missing.push('at least one career interest')
+    return missing
+  }
+
+  function handleContinue() {
+    const missing = step === 1 ? getMissingFieldsStep1() : getMissingFieldsStep2()
+    if (missing.length > 0) {
+      setAttemptedContinue(true)
+      return
+    }
+    setAttemptedContinue(false)
+    setStep(step + 1)
+  }
+
+  function handleBack() {
+    setAttemptedContinue(false)
+    if (step === 1) navigate('/dashboard')
+    else setStep(step - 1)
   }
 
   async function handleSubmit() {
@@ -315,6 +356,11 @@ export default function Assessment() {
                   className="focus-ring w-full resize-y rounded-xl border border-ink-soft/15 bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-soft/60" />
               </Field>
             </Card>
+            {attemptedContinue && getMissingFieldsStep1().length > 0 && (
+              <div className="rounded-lg bg-coral-light border border-coral/20 px-4 py-3 text-sm text-coral">
+                Please provide {joinList(getMissingFieldsStep1())} before continuing.
+              </div>
+            )}
           </div>
         )}
 
@@ -337,6 +383,11 @@ export default function Assessment() {
                 </div>
               </Field>
             </Card>
+            {attemptedContinue && getMissingFieldsStep2().length > 0 && (
+              <div className="rounded-lg bg-coral-light border border-coral/20 px-4 py-3 text-sm text-coral">
+                Please provide {joinList(getMissingFieldsStep2())} before continuing.
+              </div>
+            )}
           </div>
         )}
 
@@ -374,12 +425,12 @@ export default function Assessment() {
         )}
 
         <div className="mt-7 flex items-center justify-between">
-          <button onClick={() => step === 1 ? navigate('/dashboard') : setStep(step - 1)}
+          <button onClick={handleBack}
             className="focus-ring rounded-lg px-4 py-2.5 text-sm font-medium text-ink-soft hover:text-navy">
             {step === 1 ? 'Cancel' : 'Back'}
           </button>
           {step < 3 ? (
-            <button onClick={() => setStep(step + 1)}
+            <button onClick={handleContinue}
               className="focus-ring rounded-lg bg-navy px-5 py-2.5 text-sm font-medium text-cream hover:bg-navy/90">
               Continue
             </button>
