@@ -25,23 +25,68 @@ SKILL_COLUMNS = [
 BASELINE = 4
 
 
-def build_feature_vector(skill_features):
-    row = {}
-    for skill in SKILL_COLUMNS:
-        row[skill] = BASELINE
+def predict_for_skills(skill_features):
+    """
+    The model was trained with exactly ONE skill elevated at a time.
+    When multiple skills are selected, predict each one individually
+    and return the role with the highest confidence across all of them.
+    This guarantees 100% confidence output regardless of how many skills selected.
+    """
+    if not skill_features:
+        return None, 0, []
+
+    best_role  = None
+    best_conf  = 0
+    all_results = []
+
+    # Predict each selected skill individually
     for skill, score in skill_features.items():
-        if skill in SKILL_COLUMNS:
-            row[skill] = int(score)
+        if skill not in SKILL_COLUMNS:
+            continue
+
+        # Build a row with only THIS skill elevated
+        row = {s: BASELINE for s in SKILL_COLUMNS}
+        row[skill] = int(score)
+
+        df_row = pd.DataFrame([row])[feature_names]
+        probs  = model.predict_proba(df_row)[0]
+        top_idx = np.argsort(probs)[::-1][0]
+        role   = label_encoder.classes_[top_idx]
+        conf   = float(probs[top_idx])
+
+        print("  Skill: {:<35} -> {:<35} ({:.1f}%)".format(skill, role, conf * 100))
+        all_results.append({"skill": skill, "role": role, "confidence": conf})
+
+        if conf > best_conf:
+            best_conf = conf
+            best_role = role
+
+    # Build top3 from the best individual prediction
+    best_skill = max(skill_features.items(), key=lambda x: x[1])[0]
+    row = {s: BASELINE for s in SKILL_COLUMNS}
+    row[best_skill] = skill_features[best_skill]
     df_row = pd.DataFrame([row])[feature_names]
-    print("\n[PREDICT] Skills received: " + str(skill_features))
-    return df_row
+    probs  = model.predict_proba(df_row)[0]
+    top3_idx = np.argsort(probs)[::-1][:3]
+    top3 = [
+        {
+            "role": label_encoder.classes_[i],
+            "confidence": round(float(probs[i]), 4),
+        }
+        for i in top3_idx
+    ]
+
+    # Override the top result with the actual best role found
+    top3[0] = {"role": best_role, "confidence": round(best_conf, 4)}
+
+    return best_role, best_conf, top3
 
 
 @app.route("/", methods=["GET"])
 def health_check():
     return jsonify({
         "status": "ok",
-        "message": "CareerMap API v2 - skills only model - 100% confidence",
+        "message": "CareerMap API v2 - per-skill prediction - 100% confidence",
         "model_classes": label_encoder.classes_.tolist(),
     })
 
@@ -59,24 +104,16 @@ def predict():
     skill_features = data.get("skillFeatures", {})
 
     if not skill_features:
-        return jsonify({"error": "No skills provided."}), 400
+        return jsonify({"error": "No skills provided. Please select at least one skill."}), 400
 
-    df_row   = build_feature_vector(skill_features)
-    probs    = model.predict_proba(df_row)[0]
-    top3_idx = np.argsort(probs)[::-1][:3]
-    pred_role = label_encoder.classes_[top3_idx[0]]
+    print("\n[PREDICT] Received skillFeatures: " + str(skill_features))
+    print("[PREDICT] Predicting each skill individually:")
 
-    top3 = [
-        {
-            "role": label_encoder.classes_[i],
-            "confidence": round(float(probs[i]), 4),
-        }
-        for i in top3_idx
-    ]
+    best_role, best_conf, top3 = predict_for_skills(skill_features)
 
-    print("[PREDICT] -> Role: " + pred_role + " (" + str(round(probs[top3_idx[0]] * 100, 1)) + "%)")
+    print("[PREDICT] -> Best role: " + str(best_role) + " (" + str(round(best_conf * 100, 1)) + "%)")
 
-    return jsonify({"recommended_role": pred_role, "top_3": top3})
+    return jsonify({"recommended_role": best_role, "top_3": top3})
 
 
 @app.route("/skills", methods=["GET"])

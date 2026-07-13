@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import FormField from '../component/FormField.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Loader2 } from 'lucide-react'
@@ -8,8 +8,10 @@ import AuthLayout from '../layout/AuthLayout.jsx'
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const successMessage = location.state?.message
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -43,6 +45,11 @@ export default function Login() {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        {successMessage && (
+          <p className="rounded-lg bg-sage-light px-3.5 py-2.5 text-sm text-sage" role="status">
+            {successMessage}
+          </p>
+        )}
         <FormField id="email" label="School or personal email" type="email" placeholder="juan.delacruz@email.com" autoComplete="email" />
         <FormField id="password" label="Password" type="password" placeholder="••••••••" autoComplete="current-password" />
 
